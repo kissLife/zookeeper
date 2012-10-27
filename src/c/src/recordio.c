@@ -80,6 +80,8 @@ int oa_serialize_int(struct oarchive *oa, const char *tag, const int32_t *d)
     priv->off+=sizeof(i);
     return 0;
 }
+
+#ifndef __sun
 int64_t htonll(int64_t v)
 {
     int i = 0;
@@ -95,6 +97,7 @@ int64_t htonll(int64_t v)
 
     return v;
 }
+#endif
 
 int oa_serialize_long(struct oarchive *oa, const char *tag, const int64_t *d)
 {
@@ -141,8 +144,8 @@ int oa_serialize_buffer(struct oarchive *oa, const char *name,
     rc = oa_serialize_int(oa, "len", &b->len);
     if (rc < 0)
         return rc;
-    // this means a buffer of NUll 
-    // with size of -1. This is 
+    // this means a buffer of NUll
+    // with size of -1. This is
     // waht we use in java serialization for NULL
     if (b->len == -1) {
       return rc;

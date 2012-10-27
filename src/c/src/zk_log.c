@@ -34,7 +34,7 @@
 #ifdef THREADED
 #ifndef WIN32
 #include <pthread.h>
-#else 
+#else
 #include "winport.h"
 #endif
 
@@ -67,13 +67,13 @@ char* get_time_buffer(){
     return getTSData(time_now_buffer,TIME_NOW_BUF_SIZE);
 }
 
-char* get_format_log_buffer(){  
+char* get_format_log_buffer(){
     return getTSData(format_log_msg_buffer,FORMAT_LOG_BUF_SIZE);
 }
 #else
 char* get_time_buffer(){
     static char buf[TIME_NOW_BUF_SIZE];
-    return buf;    
+    return buf;
 }
 
 char* get_format_log_buffer(){
@@ -101,7 +101,7 @@ static const char* time_now(char* now_str){
     struct tm lt;
     time_t now = 0;
     size_t len = 0;
-    
+
     gettimeofday(&tv,0);
 
     now = tv.tv_sec;
@@ -133,17 +133,17 @@ void log_message(ZooLogLevel curLevel,int line,const char* funcName,
 #endif
     if(pid==0)pid=getpid();
 #ifndef THREADED
-    fprintf(LOGSTREAM, "%s:%d:%s@%s@%d: %s\n", time_now(get_time_buffer()),pid,
+    fprintf(LOGSTREAM, "%s:%ld:%s@%s@%d: %s\n", time_now(get_time_buffer()),pid,
             dbgLevelStr[curLevel],funcName,line,message);
 #else
 #ifdef WIN32
     fprintf(LOGSTREAM, "%s:%d(0x%lx):%s@%s@%d: %s\n", time_now(timebuf),pid,
             (unsigned long int)(pthread_self().thread_id),
-            dbgLevelStr[curLevel],funcName,line,message);      
+            dbgLevelStr[curLevel],funcName,line,message);
 #else
     fprintf(LOGSTREAM, "%s:%d(0x%lx):%s@%s@%d: %s\n", time_now(get_time_buffer()),pid,
             (unsigned long int)pthread_self(),
-            dbgLevelStr[curLevel],funcName,line,message);      
+            dbgLevelStr[curLevel],funcName,line,message);
 #endif
 #endif
     fflush(LOGSTREAM);
@@ -155,10 +155,10 @@ const char* format_log_message(const char* format,...)
     char* buf=get_format_log_buffer();
     if(!buf)
         return "format_log_message: Unable to allocate memory buffer";
-    
+
     va_start(va,format);
     vsnprintf(buf, FORMAT_LOG_BUF_SIZE-1,format,va);
-    va_end(va); 
+    va_end(va);
     return buf;
 }
 
