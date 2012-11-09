@@ -194,7 +194,9 @@ struct _zhandle {
     struct timeval last_send; /* The time that the last message was sent */
     struct timeval last_ping; /* The time that the last PING was sent */
     struct timeval next_deadline; /* The time of the next deadline */
-    int recv_timeout; /* The maximum amount of time that can go by without 
+    struct timeval last_connect; /* The time when the connection was still up */
+    struct timeval init; /* The time when this handle was initialized */
+    int recv_timeout; /* The maximum amount of time that can go by without
      receiving anything from the zookeeper server */
     buffer_list_t *input_buffer; /* the current buffer being read in */
     buffer_head_t to_process; /* The buffers that have been read and are ready to be processed. */

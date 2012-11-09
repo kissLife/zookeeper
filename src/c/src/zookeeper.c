@@ -791,6 +791,7 @@ zhandle_t *zookeeper_init(const char *host, watcher_fn watcher,
     if (!zh) {
         return 0;
     }
+    gettimeofday(&zh->init, 0);
     zh->fd = -1;
     zh->state = NOTCONNECTED_STATE_DEF;
     zh->context = context;
@@ -1234,9 +1235,9 @@ static void handle_error(zhandle_t *zh,int rc)
     cleanup_bufs(zh,1,rc);
     zh->fd = -1;
     zh->connect_index++;
-    if (!is_unrecoverable(zh)) {
-        zh->state = 0;
-    }
+//    if (!is_unrecoverable(zh)) {
+//        zh->state = 0;
+//    }
     if (process_async(zh->outstanding_sync)) {
         process_completions(zh);
     }
@@ -1553,11 +1554,34 @@ int zookeeper_interest(zhandle_t *zh, int *fd, int *interest,
     if (is_unrecoverable(zh))
         return ZINVALIDSTATE;
     gettimeofday(&now, 0);
+    if (zh->state == ZOO_CONNECTING_STATE) {
+        int session_timeout = calculate_interval(&zh->last_connect, &now);
+        LOG_DEBUG(("time since disconnect is %d", session_timeout));
+        if (session_timeout > zh->recv_timeout) {
+            /* If the previous state was CONNECTING_STATE, and we've
+             * exceeded the timeout, then that means we're not successful
+             * in re-connecting before the session timeout, so we need
+             * to inform the upstream consumer and return ZSESSIONEXPIRED, since
+             * the server would have expired us.
+             */
+            LOG_ERROR(("Exceeded timeout and disconnected from server."));
+            return api_epilog(zh, ZCONNECTIONLOSS);
+        }
+        // If we've never connected to the server before, then we want to timeout if
+        // we're still in connecting state and it's been > timeout
+        if (zh->last_connect.tv_sec == 0) {
+            int time_since_init = calculate_interval(&zh->init, &now);
+            if (time_since_init > zh->recv_timeout) {
+                LOG_ERROR(("unable to connect to zk server at all"));
+                return api_epilog(zh, ZCONNECTIONLOSS);
+            }
+        }
+    }
+
+    int time_left = 0;
     if(zh->next_deadline.tv_sec!=0 || zh->next_deadline.tv_usec!=0){
-        int time_left = calculate_interval(&zh->next_deadline, &now);
-        int max_exceed = zh->recv_timeout / 10 > 200 ? 200 : 
-                         (zh->recv_timeout / 10);
-        if (time_left > max_exceed)
+        time_left = calculate_interval(&zh->next_deadline, &now);
+        if (time_left > 10)
             LOG_WARN(("Exceeded deadline by %dms", time_left));
     }
     api_prolog(zh);
@@ -1609,9 +1633,17 @@ int zookeeper_interest(zhandle_t *zh, int *fd, int *interest,
                 /* we are handling the non-blocking connect according to
                  * the description in section 16.3 "Non-blocking connect"
                  * in UNIX Network Programming vol 1, 3rd edition */
-                if (errno == EWOULDBLOCK || errno == EINPROGRESS)
+                if (errno == EINPROGRESS) {
+                    *fd = zh->fd;
+                    LOG_DEBUG(("non blocking connection in progress with zh->fd %d, fd %d", zh->fd, *fd));
                     zh->state = ZOO_CONNECTING_STATE;
-                else
+                    *interest = 3;
+                    *tv = get_timeval(zh->recv_timeout/3);
+                    zh->last_recv = now;
+                    zh->last_send = now;
+                    zh->last_ping = now;
+                    return api_epilog(zh, ZOK);
+                } else
                     return api_epilog(zh,handle_socket_error_msg(zh,__LINE__,
                             ZCONNECTIONLOSS,"connect() call failed"));
             } else {
@@ -2291,6 +2323,15 @@ int zookeeper_process(zhandle_t *zh, int events)
         process_completions(zh);
     }
     return api_epilog(zh,ZOK);}
+
+int zookeeper_close_fd(zhandle_t *zh) {
+    if (zh != 0) {
+        close(zh->fd);
+        zh->fd = -1;
+    }
+
+    return 0;
+}
 
 int zoo_state(zhandle_t *zh)
 {

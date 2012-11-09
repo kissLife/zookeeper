@@ -559,6 +559,16 @@ ZOOAPI int zookeeper_process(zhandle_t *zh, int events);
 #endif
 
 /**
+ * \brief Closes the current zookeeper fd.
+ *
+ * \param zh the zookeeper handle obtained by a call to \ref zookeeper_init
+ * \return a result code.
+ * ZOK - success
+ * -1 - in case of failure
+ */
+ZOOAPI int zookeeper_close_fd(zhandle_t *zh);
+
+/**
  * \brief signature of a completion function for a call that returns void.
  * 
  * This method will be invoked at the end of a asynchronous call and also as 
