@@ -132,7 +132,7 @@ void log_message(ZooLogLevel curLevel,int line,const char* funcName,
     char timebuf [TIME_NOW_BUF_SIZE];
 #endif
     if(pid==0)pid=getpid();
-#ifndef __sun
+#if !defined(__sun) || defined(_amd64)
 #ifndef THREADED
     fprintf(LOGSTREAM, "%s:%d:%s@%s@%d: %s\n", time_now(get_time_buffer()),pid,
             dbgLevelStr[curLevel],funcName,line,message);
@@ -148,8 +148,8 @@ void log_message(ZooLogLevel curLevel,int line,const char* funcName,
 #endif
 #endif
 #endif
-#ifdef __sun
-#ifdef THREADED
+#if defined(__sun) && !defined(_amd64)
+#ifndef THREADED
     fprintf(LOGSTREAM, "%s:%ld:%s@%s@%d: %s\n", time_now(get_time_buffer()),pid,
             dbgLevelStr[curLevel],funcName,line,message);
 #else
