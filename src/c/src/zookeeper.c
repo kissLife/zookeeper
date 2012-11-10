@@ -1777,6 +1777,7 @@ static int check_events(zhandle_t *zh, int events)
                     memcpy(zh->client_id.passwd, &zh->primer_storage.passwd,
                            sizeof(zh->client_id.passwd));
                     zh->state = ZOO_CONNECTED_STATE;
+                    gettimeofday(&zh->last_connect, 0);
                     LOG_INFO(("session establishment complete on server [%s], sessionId=%#llx, negotiated timeout=%d",
                               format_endpoint_info(&zh->addrs[zh->connect_index]),
                               newid, zh->recv_timeout));
@@ -2321,6 +2322,7 @@ int zookeeper_process(zhandle_t *zh, int events)
     if (process_async(zh->outstanding_sync)) {
         process_completions(zh);
     }
+    gettimeofday(&zh->last_connect, 0);
     return api_epilog(zh,ZOK);}
 
 int zookeeper_close_fd(zhandle_t *zh) {
