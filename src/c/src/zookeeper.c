@@ -1628,18 +1628,18 @@ int zookeeper_interest(zhandle_t *zh, int *fd, int *interest,
 #endif
             }
             if (rc == -1) {
+                zh->state = ZOO_CONNECTING_STATE;
+                *interest = 3;
+                *tv = get_timeval(zh->recv_timeout/3);
+                zh->last_recv = now;
+                zh->last_send = now;
+                zh->last_ping = now;
                 /* we are handling the non-blocking connect according to
                  * the description in section 16.3 "Non-blocking connect"
                  * in UNIX Network Programming vol 1, 3rd edition */
                 if (errno == EINPROGRESS) {
                     *fd = zh->fd;
                     LOG_DEBUG(("non blocking connection in progress with zh->fd %d, fd %d", zh->fd, *fd));
-                    zh->state = ZOO_CONNECTING_STATE;
-                    *interest = 3;
-                    *tv = get_timeval(zh->recv_timeout/3);
-                    zh->last_recv = now;
-                    zh->last_send = now;
-                    zh->last_ping = now;
                     return api_epilog(zh, ZOK);
                 } else
                     return api_epilog(zh,handle_socket_error_msg(zh,__LINE__,
