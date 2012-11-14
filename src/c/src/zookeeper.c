@@ -1563,7 +1563,7 @@ int zookeeper_interest(zhandle_t *zh, int *fd, int *interest,
              * the server would have expired us.
              */
             LOG_ERROR(("Exceeded timeout and disconnected from server."));
-            return api_epilog(zh, ZCONNECTIONLOSS);
+            return api_epilog(zh, ZSESSIONEXPIRED);
         }
         // If we've never connected to the server before, then we want to timeout if
         // we're still in connecting state and it's been > timeout
@@ -1571,7 +1571,7 @@ int zookeeper_interest(zhandle_t *zh, int *fd, int *interest,
             int time_since_init = calculate_interval(&zh->init, &now);
             if (time_since_init > zh->recv_timeout) {
                 LOG_ERROR(("unable to connect to zk server at all"));
-                return api_epilog(zh, ZCONNECTIONLOSS);
+                return api_epilog(zh, ZSESSIONEXPIRED);
             }
         }
     }
