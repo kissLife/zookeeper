@@ -152,8 +152,8 @@
     <property name="build.dir.eclipse-test-classes" value="${build.dir.eclipse}/classes-test"/>
 
     <!-- cppunit property set -->
-    <property name="cppunit.lib" value="/usr/lib"/>
-    <property name="cppunit.m4" value="/usr/share/aclocal"/>
+    <property name="cppunit.lib" value="/opt/local/lib"/>
+    <property name="cppunit.m4" value="/opt/local/share/aclocal"/>
 
     <!-- packaging property set -->
     <property name="package.release" value="1"/>
